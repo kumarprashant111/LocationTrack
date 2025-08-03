@@ -10,7 +10,7 @@ type Filters = {
 };
 
 const defaultFilters: Filters = {
-  region: "tokyo",
+  region: "all",
   category: "all",
   startDate: "",
   endDate: "",
