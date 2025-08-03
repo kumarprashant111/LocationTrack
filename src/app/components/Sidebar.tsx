@@ -1,9 +1,32 @@
 "use client";
 
 import { useFilter } from "@/context/FilterContext";
+import {
+  useExternalLocations,
+  JAPAN_CITIES,
+} from "@/hooks/useExternalLocations";
+import Image from "next/image";
+import {
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+  Typography,
+  Paper,
+  useTheme,
+  Autocomplete,
+  Avatar,
+  Box,
+} from "@mui/material";
+import { CategoryItem } from "@/hooks/useExternalLocations";
 
 export default function Sidebar() {
+  const theme = useTheme();
   const { filters, setFilters } = useFilter();
+
+  const { availableCategories } = useExternalLocations("all");
 
   const update = (key: keyof typeof filters, value: string) => {
     setFilters((prev) => ({
@@ -12,60 +35,122 @@ export default function Sidebar() {
     }));
   };
 
-  // ✅ Static list of regions and categories (expand as needed)
-  const staticRegions = ["tokyo", "osaka", "kyoto", "fukuoka", "sapporo"];
-  const staticCategories = ["retail", "transport", "events"];
-
   return (
-    <aside className="w-64 p-4 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-black text-sm">
-      <h2 className="text-lg font-semibold mb-4">Filters</h2>
+    <Paper
+      elevation={4}
+      sx={{
+        width: 280,
+        minHeight: "100vh",
+        p: 3,
+        borderRight: `1px solid ${theme.palette.divider}`,
+        bgcolor: theme.palette.background.default,
+      }}
+    >
+      <Typography variant="h6" fontWeight={700} gutterBottom>
+        Filters
+      </Typography>
 
-      {/* Category Filter */}
-      <label className="block mb-1">Category</label>
-      <select
-        value={filters.category}
-        onChange={(e) => update("category", e.target.value)}
-        className="w-full rounded bg-gray-100 dark:bg-gray-800 p-1"
-      >
-        <option value="all">All</option>
-        {staticCategories.map((cat) => (
-          <option key={cat} value={cat}>
-            {cat.charAt(0).toUpperCase() + cat.slice(1)}
-          </option>
-        ))}
-      </select>
+      {/* Category Autocomplete with icon */}
+      <Autocomplete
+        fullWidth
+        size="small"
+        options={availableCategories}
+        getOptionLabel={(option: CategoryItem) =>
+          option.name.charAt(0).toUpperCase() + option.name.slice(1)
+        }
+        value={
+          filters.category === "all"
+            ? null
+            : availableCategories.find((c) => c.name === filters.category) ||
+              null
+        }
+        onChange={(e, value) => update("category", value?.name || "all")}
+        isOptionEqualToValue={(option, value) => option.name === value.name}
+        renderOption={({ key, ...rest }, option) => (
+          <Box
+            key={key}
+            component="li"
+            {...rest}
+            display="flex"
+            alignItems="center"
+            sx={{
+              "&:hover": {
+                bgcolor: theme.palette.action.hover,
+              },
+            }}
+          >
+            <Avatar
+              sx={{
+                width: 28,
+                height: 28,
+                mr: 1,
+
+                p: 0.5, // padding for spacing
+              }}
+            >
+              <Image
+                src={option.icon}
+                alt={option.name}
+                width={24}
+                height={24}
+                style={{
+                  objectFit: "contain",
+                  filter: "drop-shadow(0 0 1px rgba(0,0,0,0.2))", // subtle visibility boost
+                }}
+              />
+            </Avatar>
+            {option.name.charAt(0).toUpperCase() + option.name.slice(1)}
+          </Box>
+        )}
+        renderInput={(params) => (
+          <TextField
+            {...params}
+            label="Category"
+            placeholder="Select category"
+          />
+        )}
+      />
 
       {/* Region Filter */}
-      <label className="block mt-4 mb-1">Region</label>
-      <select
-        value={filters.region}
-        onChange={(e) => update("region", e.target.value)}
-        className="w-full rounded bg-gray-100 dark:bg-gray-800 p-1"
-      >
-        <option value="all">All</option>
-        {staticRegions.map((region) => (
-          <option key={region} value={region}>
-            {region.charAt(0).toUpperCase() + region.slice(1)}
-          </option>
-        ))}
-      </select>
+      <FormControl fullWidth size="small" margin="normal">
+        <InputLabel>Region</InputLabel>
+        <Select
+          label="Region"
+          value={filters.region}
+          onChange={(e) => update("region", e.target.value)}
+        >
+          <MenuItem value="all">All</MenuItem>
+          {JAPAN_CITIES.map((city) => (
+            <MenuItem key={city.value} value={city.value}>
+              {city.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-      {/* Date Filters */}
-      <label className="block mt-4 mb-1">Start Date</label>
-      <input
+      <Divider sx={{ my: 2 }} />
+
+      {/* Date Inputs */}
+      <TextField
+        fullWidth
         type="date"
+        size="small"
+        label="Start Date"
         value={filters.startDate}
         onChange={(e) => update("startDate", e.target.value)}
-        className="w-full bg-gray-100 dark:bg-gray-800 p-1 rounded"
+        InputLabelProps={{ shrink: true }}
+        margin="dense"
       />
-
-      <label className="block mt-4 mb-1">End Date</label>
-      <input
+      <TextField
+        fullWidth
         type="date"
+        size="small"
+        label="End Date"
         value={filters.endDate}
         onChange={(e) => update("endDate", e.target.value)}
-        className="w-full bg-gray-100 dark:bg-gray-800 p-1 rounded"
+        InputLabelProps={{ shrink: true }}
+        margin="dense"
       />
-    </aside>
+    </Paper>
   );
 }

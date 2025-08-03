@@ -3,8 +3,11 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useBIData } from "@/hooks/useBIData";
+import { Paper } from "@mui/material";
 import type { RefObject } from "react";
+// import type { FeatureCollection, Point } from "geojson";
+
+// ...
 
 type MapProps = {
   selectedCoords?: [number, number] | null;
@@ -17,77 +20,81 @@ type MapProps = {
     region: string;
     category: string;
   }[];
+  visibleCategories?: string[];
 };
 
-
-export default function Map({ selectedCoords, scrollRef }: MapProps) {
+export default function Map({
+  selectedCoords,
+  scrollRef,
+  filteredLocations,
+  visibleCategories,
+}: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const { data: filteredLocations, loading } = useBIData();
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://demotiles.maplibre.org/style.json",
+      style:
+        "https://api.maptiler.com/maps/streets-v2/style.json?key=eZB5Vbk73nkRL0i19Gz6",
       center: [139.6917, 35.6895],
-      zoom: 9,
+      zoom: 15,
+      pitch: 60,
+      bearing: -20,
+      // @ts-expect-error: 'antialias' is valid at runtime but not typed
+      antialias: true,
     });
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
 
-    return () => map.remove();
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
   }, []);
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || loading) return;
+    if (!map) return;
 
-    // Remove previous markers
     document.querySelectorAll(".maplibre-marker").forEach((el) => el.remove());
 
-    filteredLocations.forEach((loc) => {
+    const locationsToRender = visibleCategories?.length
+      ? filteredLocations.filter((loc) =>
+          visibleCategories.includes(loc.category)
+        )
+      : filteredLocations;
+
+    locationsToRender.forEach((loc) => {
       const isSelected =
         !!selectedCoords &&
         loc.coords[0] === selectedCoords[0] &&
         loc.coords[1] === selectedCoords[1];
 
       if (isSelected) {
-        // ✅ Custom pulsing marker for selected
+        const wrapper = document.createElement("div");
+        wrapper.className = "maplibre-marker";
+        wrapper.style.position = "relative";
+        wrapper.style.width = "40px";
+        wrapper.style.height = "40px";
+        wrapper.style.display = "flex";
+        wrapper.style.alignItems = "center";
+        wrapper.style.justifyContent = "center";
+        wrapper.style.transform = "translate(-50%, -100%)";
 
-       const wrapper = document.createElement("div");
-       wrapper.className = "maplibre-marker";
-       wrapper.style.position = "relative";
-       wrapper.style.width = "40px";
-       wrapper.style.height = "40px";
-       wrapper.style.display = "flex";
-       wrapper.style.alignItems = "center";
-       wrapper.style.justifyContent = "center";
-       wrapper.style.transform = "translate(-50%, -100%)";
+        const pulseRing = document.createElement("div");
+        pulseRing.className = "selected-marker";
+        pulseRing.style.position = "absolute";
+        pulseRing.style.width = "40px";
+        pulseRing.style.height = "40px";
+        pulseRing.style.borderRadius = "50%";
+        pulseRing.style.backgroundColor = "rgba(59,130,246,0.2)";
+        pulseRing.style.animation = "pulse 1.5s ease-in-out infinite";
 
-       // 👇 Animated ring div
-       const pulseRing = document.createElement("div");
-       pulseRing.className = "selected-marker";
-       pulseRing.style.position = "absolute";
-       pulseRing.style.width = "40px";
-       pulseRing.style.height = "40px";
-       pulseRing.style.borderRadius = "50%";
-       pulseRing.style.backgroundColor = "rgba(59,130,246,0.2)";
-       pulseRing.style.animation = "pulse 1.5s ease-in-out infinite";
-
-       // 👇 Marker image on top
-      //  const icon = document.createElement("img");
-      //  icon.src = "/marker-icon.png";
-      //  icon.alt = "Selected Marker";
-      //  icon.style.width = "30px";
-      //  icon.style.height = "30px";
-      //  icon.style.zIndex = "10";
-
-       wrapper.appendChild(pulseRing);
-      //  wrapper.appendChild(icon);
-
+        wrapper.appendChild(pulseRing);
 
         new maplibregl.Marker({ element: wrapper, anchor: "bottom" })
           .setLngLat(loc.coords)
@@ -98,7 +105,6 @@ export default function Map({ selectedCoords, scrollRef }: MapProps) {
           )
           .addTo(map);
       } else {
-        // ✅ Default marker
         new maplibregl.Marker({ anchor: "bottom" })
           .setLngLat(loc.coords)
           .setPopup(
@@ -109,7 +115,7 @@ export default function Map({ selectedCoords, scrollRef }: MapProps) {
           .addTo(map);
       }
     });
-  }, [filteredLocations, loading, selectedCoords]);
+  }, [filteredLocations, selectedCoords, visibleCategories]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -147,16 +153,111 @@ export default function Map({ selectedCoords, scrollRef }: MapProps) {
     });
   }, [filteredLocations, selectedCoords]);
 
+  // useEffect(() => {
+  //   const map = mapRef.current;
+  //   if (!map) return;
+
+  //   const heatmapSourceId = "heatmap-source";
+  //   const heatmapLayerId = "heatmap-layer";
+
+  //   const geojson: FeatureCollection<Point> = {
+  //     type: "FeatureCollection",
+  //     features: filteredLocations.map((loc) => ({
+  //       type: "Feature",
+  //       properties: {
+  //         visitors: loc.visitors,
+  //       },
+  //       geometry: {
+  //         type: "Point",
+  //         coordinates: loc.coords,
+  //       },
+  //     })),
+  //   };
+
+  //   const addHeatmapLayer = () => {
+  //     if (map.getSource(heatmapSourceId)) {
+  //       const existingSource = map.getSource(
+  //         heatmapSourceId
+  //       ) as maplibregl.GeoJSONSource;
+  //       existingSource?.setData(geojson);
+
+  //       return;
+  //     }
+
+  //     map.addSource(heatmapSourceId, {
+  //       type: "geojson",
+  //       data: geojson,
+  //     });
+
+  //     map.addLayer({
+  //       id: heatmapLayerId,
+  //       type: "heatmap",
+  //       source: heatmapSourceId,
+  //       maxzoom: 18,
+  //       paint: {
+  //         // Heatmap intensity based on zoom
+  //         "heatmap-intensity": [
+  //           "interpolate",
+  //           ["linear"],
+  //           ["zoom"],
+  //           10,
+  //           1,
+  //           15,
+  //           3,
+  //         ],
+
+  //         // Heatmap color ramp
+  //         "heatmap-color": [
+  //           "interpolate",
+  //           ["linear"],
+  //           ["heatmap-density"],
+  //           0,
+  //           "rgba(33,102,172,0)",
+  //           0.2,
+  //           "rgb(103,169,207)",
+  //           0.4,
+  //           "rgb(209,229,240)",
+  //           0.6,
+  //           "rgb(253,219,199)",
+  //           0.8,
+  //           "rgb(239,138,98)",
+  //           1,
+  //           "rgb(178,24,43)",
+  //         ],
+
+  //         // Increase radius
+  //         "heatmap-radius": 30,
+
+  //         // Opacity for visibility
+  //         "heatmap-opacity": 0.9,
+  //       },
+  //     });
+  //   };
+
+  //   if (map.isStyleLoaded()) {
+  //     addHeatmapLayer();
+  //   } else {
+  //     map.once("styledata", addHeatmapLayer);
+  //   }
+  // }, [filteredLocations]);
+
   return (
-    <div
+    <Paper
       ref={scrollRef}
-      className="relative w-full h-[400px] mb-4 rounded-xl border dark:border-zinc-700 overflow-hidden"
+      elevation={3}
+      sx={{
+        height: 400,
+        borderRadius: 3,
+        overflow: "hidden",
+        border: "1px solid",
+        borderColor: "divider",
+      }}
     >
       <div
         ref={mapContainerRef}
-        className="absolute inset-0"
-        style={{ height: "100%", width: "100%" }}
+        style={{ width: "100%", height: "100%" }}
+        className="map-container"
       />
-    </div>
+    </Paper>
   );
 }

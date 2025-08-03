@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    domains: ["ss3.4sqi.net"], // ✅ allow Foursquare icons
+  },
 };
 
 export default nextConfig;

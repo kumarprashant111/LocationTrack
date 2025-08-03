@@ -1,24 +1,30 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { Box, Grid, Container } from "@mui/material";
 import Map from "@/app/components/Map";
 import Sidebar from "@/app/components/Sidebar";
 import BIChart from "@/app/components/BIChart";
 import Header from "@/app/components/Header";
 import KPICards from "@/app/components/KPICards";
 import TopLocationsTable from "@/app/components/TopLocationsTable";
+import LocationDetailDialog from "@/app/components/LocationDetailDialog";
 import { useBIData } from "@/hooks/useBIData";
-import TimeSeriesChart from "../components/TimeSeriesChart";
+import { ExternalLocation } from "@/types/geo";
+import SearchBox from "@/app/components/SearchBox";
+import VisitorsByCategoryChart from "../components/ PopularPlaceTypesChart";
 
 export default function DashboardPage() {
   const [selectedCoords, setSelectedCoords] = useState<[number, number] | null>(
     null
   );
+  const [selectedLocation, setSelectedLocation] =
+    useState<ExternalLocation | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const mapScrollRef = useRef<HTMLDivElement>(null);
 
-  const { data: filteredLocations } = useBIData(); // ✅ get data here
+  const { data: filteredLocations } = useBIData();
 
-  // ✅ Reset selectedCoords if not in filtered results
   useEffect(() => {
     if (
       selectedCoords &&
@@ -29,38 +35,72 @@ export default function DashboardPage() {
       )
     ) {
       setSelectedCoords(null);
+      setSelectedLocation(null);
     }
   }, [filteredLocations, selectedCoords]);
 
   const handleLocationSelect = (coords: [number, number]) => {
-    setSelectedCoords(coords);
-    setTimeout(() => {
-      mapScrollRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    }, 100);
+    const location = filteredLocations.find(
+      (loc) => loc.coords[0] === coords[0] && loc.coords[1] === coords[1]
+    );
+
+    if (location) {
+      setSelectedCoords(coords);
+      setSelectedLocation(location);
+      setDialogOpen(true);
+      setTimeout(() => {
+        mapScrollRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
+    }
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <Box className="min-h-screen flex flex-col">
       <Header />
-      <div className="flex flex-1">
+      <Box display="flex" flex="1">
         <Sidebar />
-        <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-[var(--background)] text-[var(--foreground)] transition-colors duration-300">
-          <Map
-            selectedCoords={selectedCoords}
-            scrollRef={mapScrollRef}
-            filteredLocations={filteredLocations} // ✅ pass as prop
-          />
-          <div className="flex flex-col gap-4">
-            <KPICards />
-            <BIChart />
-            <TimeSeriesChart />
-            <TopLocationsTable onLocationSelect={handleLocationSelect} />
-          </div>
-        </main>
-      </div>
-    </div>
+        <Box component="main" flex={1} bgcolor="var(--background)">
+          <Container maxWidth="xl" sx={{ py: 3 }}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Map
+                  selectedCoords={selectedCoords}
+                  scrollRef={mapScrollRef}
+                  filteredLocations={filteredLocations}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <KPICards />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <BIChart />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                {/* <TimeSeriesChart /> */}
+                <VisitorsByCategoryChart />
+              </Grid>
+              <Grid item xs={12}>
+                <TopLocationsTable onLocationSelect={handleLocationSelect} />
+              </Grid>
+            </Grid>
+          </Container>
+        </Box>
+      </Box>
+
+      {/* 🔍 Location Modal */}
+      <LocationDetailDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        location={selectedLocation}
+      />
+      <SearchBox
+        locations={filteredLocations}
+        onSelect={handleLocationSelect}
+      />
+    </Box>
   );
 }

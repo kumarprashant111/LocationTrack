@@ -2,33 +2,64 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { AppBar, Toolbar, Typography, Button } from "@mui/material";
 
 export default function Header() {
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [themeMode, setThemeMode] = useState<"light" | "dark">("light");
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    document.documentElement.setAttribute("data-theme", themeMode);
+  }, [themeMode]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+    setThemeMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   return (
-    <header className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center shadow-sm">
-      <Link
-        href="/dashboard"
-        className="text-xl font-bold text-gray-800 dark:text-white"
-      >
-        🌐 GeoBI Dashboard
-      </Link>
+    <AppBar
+      position="static"
+      color="default"
+      sx={{
+        backgroundColor: "var(--background)",
+        color: "var(--foreground)",
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        boxShadow: 1,
+        px: 2,
+      }}
+    >
+      <Toolbar sx={{ justifyContent: "space-between" }}>
+        <Link href="/dashboard" passHref>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: "bold",
+              textDecoration: "none",
+              color: "inherit",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            🌐 Location Tracking
+          </Typography>
+        </Link>
 
-      <button
-        onClick={toggleTheme}
-        className="px-4 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-sm text-gray-800 dark:text-white hover:opacity-80"
-      >
-        {theme === "light" ? "🌙 Dark" : "☀️ Light"}
-      </button>
-    </header>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={toggleTheme}
+          sx={{
+            borderColor: "gray.300",
+            backgroundColor: themeMode === "light" ? "#f3f4f6" : "#1f2937",
+            color: themeMode === "light" ? "#111827" : "#fff",
+            "&:hover": {
+              opacity: 0.85,
+              backgroundColor: themeMode === "light" ? "#e5e7eb" : "#374151",
+            },
+          }}
+        >
+          {themeMode === "light" ? "🌙 Dark" : "☀️ Light"}
+        </Button>
+      </Toolbar>
+    </AppBar>
   );
 }

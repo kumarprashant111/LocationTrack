@@ -11,9 +11,11 @@ export type ExternalLocation = {
   id: string;
   name: string;
   coords: [number, number];
-  visitors: number;
   region: string;
   category: string;
-  visitsLast7Days: number[]; // ✅ Add this field
+  address?: string;
+  iconUrl?: string;
+  link?: string;
+  visitors: number;
+  visitsLast7Days: number[];
 };
-

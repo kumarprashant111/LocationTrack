@@ -3,58 +3,122 @@
 import { ExternalLocation } from "@/types/geo";
 import { useEffect, useState } from "react";
 
-type GeoNamesApiResult = {
+type FoursquarePlace = {
+  fsq_id: string;
   name: string;
-  lat: string;
-  lng: string;
-  population?: number;
+  location: {
+    region?: string;
+    locality?: string;
+    formatted_address?: string;
+  };
+  geocodes: {
+    main: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+  categories: {
+    name: string;
+    icon: {
+      prefix: string;
+      suffix: string;
+    };
+  }[];
+  link?: string;
 };
+
+export type CategoryItem = {
+  name: string;
+  icon: string;
+};
+
+export const JAPAN_CITIES = [
+  { value: "Tokyo", label: "Tokyo (東京)" },
+  { value: "Osaka", label: "Osaka (大阪)" },
+  { value: "Kyoto", label: "Kyoto (京都)" },
+  { value: "Yokohama", label: "Yokohama (横浜)" },
+  { value: "Nagoya", label: "Nagoya (名古屋)" },
+  { value: "Sapporo", label: "Sapporo (札幌)" },
+  { value: "Fukuoka", label: "Fukuoka (福岡)" },
+  { value: "Kobe", label: "Kobe (神戸)" },
+  { value: "Sendai", label: "Sendai (仙台)" },
+  { value: "Hiroshima", label: "Hiroshima (広島)" },
+];
 
 export function useExternalLocations(region: string) {
   const [locations, setLocations] = useState<ExternalLocation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<CategoryItem[]>([]);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-
       try {
-        const searchQuery = region === "all" ? "tokyo" : region;
-
-        const res = await fetch(
-          `https://secure.geonames.org/searchJSON?q=${searchQuery}&maxRows=10&username=kumarprashant768`
+        const queryCity = region === "all" ? "Tokyo" : region;
+        const response = await fetch(
+          `https://api.foursquare.com/v3/places/search?near=${queryCity}&limit=50`,
+          {
+            headers: {
+              Authorization: "fsq31DatSVBL6U8bi06l6nzMGZP9b4R3/U8AhCqGE5umxJU=",
+            },
+          }
         );
 
-        if (!res.ok) {
-          throw new Error(`GeoNames API failed: ${res.status}`);
-        }
+        const json = await response.json();
 
-        const data: { geonames?: GeoNamesApiResult[] } = await res.json();
+        const categoryMap = new Map<string, string>();
 
-        if (!data.geonames || !Array.isArray(data.geonames)) {
-          console.warn("Unexpected GeoNames response:", data);
-          setLocations([]);
-          return;
-        }
+        const transformed: ExternalLocation[] = json.results.map(
+          (item: FoursquarePlace) => {
+            const mainCategory = item.categories[0];
+            const categoryName =
+              mainCategory?.name.toLowerCase() || "uncategorized";
 
-        const transformed: ExternalLocation[] = data.geonames.map(
-          (item, index) => ({
-            id: `${region}-${index}`,
-            name: item.name,
-            coords: [parseFloat(item.lng), parseFloat(item.lat)],
-            visitors: item.population ?? Math.floor(Math.random() * 1000),
-            region: region.toLowerCase(),
-            category: ["retail", "transport", "events"][index % 3],
-            visitsLast7Days: Array.from({ length: 7 }, () =>
-              Math.floor(Math.random() * 300)
-            ), // ✅ fake data for chart
-          })
+            // build category map
+            if (mainCategory && !categoryMap.has(categoryName)) {
+              categoryMap.set(
+                categoryName,
+                `${mainCategory.icon.prefix}64${mainCategory.icon.suffix}`
+              );
+            }
+
+            return {
+              id: item.fsq_id,
+              name: item.name,
+              coords: [
+                item.geocodes.main.longitude,
+                item.geocodes.main.latitude,
+              ],
+              visitors: Math.floor(Math.random() * 1000),
+              region:
+                item.location.locality?.toLowerCase() ||
+                item.location.region?.toLowerCase() ||
+                "unknown",
+              category: categoryName,
+              visitsLast7Days: Array.from({ length: 7 }, () =>
+                Math.floor(Math.random() * 300)
+              ),
+              link: item.link
+                ? `https://foursquare.com${item.link}`
+                : `https://foursquare.com/v/${item.name
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}/${item.fsq_id}`,
+            };
+          }
         );
 
         setLocations(transformed);
+
+        setCategories(
+          Array.from(categoryMap.entries()).map(([name, icon]) => ({
+            name,
+            icon,
+          }))
+        );
       } catch (err) {
-        console.error("Error fetching GeoNames data:", err);
+        console.error("Foursquare API error:", err);
         setLocations([]);
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -63,5 +127,10 @@ export function useExternalLocations(region: string) {
     fetchData();
   }, [region]);
 
-  return { locations, loading };
+  return {
+    locations,
+    loading,
+    availableRegions: JAPAN_CITIES,
+    availableCategories: categories,
+  };
 }

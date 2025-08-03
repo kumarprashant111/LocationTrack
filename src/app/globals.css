@@ -27,8 +27,6 @@ body {
   transition: background 0.3s, color 0.3s;
 }
 
-
-
 @keyframes pulse {
   0% {
     transform: scale(1);
