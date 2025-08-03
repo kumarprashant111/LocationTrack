@@ -12,7 +12,7 @@ import LocationDetailDialog from "@/app/components/LocationDetailDialog";
 import { useBIData } from "@/hooks/useBIData";
 import { ExternalLocation } from "@/types/geo";
 import SearchBox from "@/app/components/SearchBox";
-import VisitorsByCategoryChart from "../components/PopularPlaceTypesChart";
+import PopularPlaceTypesChart from "../components/PopularPlaceTypesChart";
 
 export default function DashboardPage() {
   const [selectedCoords, setSelectedCoords] = useState<[number, number] | null>(
@@ -81,7 +81,7 @@ export default function DashboardPage() {
               </Grid>
               <Grid item xs={12} md={6}>
                 {/* <TimeSeriesChart /> */}
-                <VisitorsByCategoryChart />
+                <PopularPlaceTypesChart />
               </Grid>
               <Grid item xs={12}>
                 <TopLocationsTable onLocationSelect={handleLocationSelect} />
