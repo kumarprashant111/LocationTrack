@@ -12,7 +12,7 @@ import LocationDetailDialog from "@/app/components/LocationDetailDialog";
 import { useBIData } from "@/hooks/useBIData";
 import { ExternalLocation } from "@/types/geo";
 import SearchBox from "@/app/components/SearchBox";
-import VisitorsByCategoryChart from "../components/ PopularPlaceTypesChart";
+import VisitorsByCategoryChart from "../components/PopularPlaceTypesChart";
 
 export default function DashboardPage() {
   const [selectedCoords, setSelectedCoords] = useState<[number, number] | null>(

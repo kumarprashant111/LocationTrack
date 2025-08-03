@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  TooltipProps,
 } from "recharts";
 import {
   Card,
@@ -59,7 +60,15 @@ export default function PopularPlaceTypesChart() {
 
   const totalVisitors = data.reduce((sum, c) => sum + c.visitors, 0);
 
-  const renderCustomTooltip = ({ active, payload }: any) => {
+  interface CategoryData {
+    name: string;
+    visitors: number;
+  }
+
+  const renderCustomTooltip = ({
+    active,
+    payload,
+  }: TooltipProps<number, string, CategoryData>) => {
     if (active && payload && payload.length > 0) {
       const { name, visitors } = payload[0].payload;
       const percentage = ((visitors / totalVisitors) * 100).toFixed(1);
