@@ -55,11 +55,12 @@ export function useExternalLocations(region: string) {
       setLoading(true);
       try {
         const queryCity = region === "all" ? "Tokyo" : region;
+        const apiKey = process.env.NEXT_PUBLIC_FSQ_API_KEY ?? "";
         const response = await fetch(
           `https://api.foursquare.com/v3/places/search?near=${queryCity}&limit=50`,
           {
             headers: {
-              Authorization: "fsq31DatSVBL6U8bi06l6nzMGZP9b4R3/U8AhCqGE5umxJU=",
+              Authorization: apiKey,
             },
           }
         );

@@ -20,6 +20,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Environment Variables
+
+To fetch data from the Foursquare Places API, the app expects a Foursquare API key. Create a `.env.local` file in the project root with the following entry:
+
+```
+NEXT_PUBLIC_FSQ_API_KEY=your_foursquare_api_key
+```
+
+The `NEXT_PUBLIC_` prefix ensures Next.js exposes the key to client-side code during the build step. Remember to define this variable whenever you run `npm run dev` or `npm run build`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
