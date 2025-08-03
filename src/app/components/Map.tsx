@@ -35,10 +35,11 @@ export default function Map({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`;
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style:
-        "https://api.maptiler.com/maps/streets-v2/style.json?key=eZB5Vbk73nkRL0i19Gz6",
+      style: styleUrl,
       center: [139.6917, 35.6895],
       zoom: 15,
       pitch: 60,
