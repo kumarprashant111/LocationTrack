@@ -31,6 +31,7 @@ export default function Map({
 }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
@@ -51,6 +52,8 @@ export default function Map({
     mapRef.current = map;
 
     return () => {
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
@@ -60,7 +63,8 @@ export default function Map({
     const map = mapRef.current;
     if (!map) return;
 
-    document.querySelectorAll(".maplibre-marker").forEach((el) => el.remove());
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
 
     const locationsToRender = visibleCategories?.length
       ? filteredLocations.filter((loc) =>
@@ -73,6 +77,8 @@ export default function Map({
         !!selectedCoords &&
         loc.coords[0] === selectedCoords[0] &&
         loc.coords[1] === selectedCoords[1];
+
+      let marker: maplibregl.Marker;
 
       if (isSelected) {
         const wrapper = document.createElement("div");
@@ -96,7 +102,7 @@ export default function Map({
 
         wrapper.appendChild(pulseRing);
 
-        new maplibregl.Marker({ element: wrapper, anchor: "bottom" })
+        marker = new maplibregl.Marker({ element: wrapper, anchor: "bottom" })
           .setLngLat(loc.coords)
           .setPopup(
             new maplibregl.Popup().setHTML(
@@ -105,7 +111,7 @@ export default function Map({
           )
           .addTo(map);
       } else {
-        new maplibregl.Marker({ anchor: "bottom" })
+        marker = new maplibregl.Marker({ anchor: "bottom" })
           .setLngLat(loc.coords)
           .setPopup(
             new maplibregl.Popup().setHTML(
@@ -114,6 +120,8 @@ export default function Map({
           )
           .addTo(map);
       }
+
+      markersRef.current.push(marker);
     });
   }, [filteredLocations, selectedCoords, visibleCategories]);
 
