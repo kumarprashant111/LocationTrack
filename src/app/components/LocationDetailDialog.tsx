@@ -41,12 +41,6 @@ export default function LocationDetailDialog({
   const mapInstanceRef = useRef<maplibregl.Map | null>(null);
 
   useEffect(() => {
-    // Cleanup on close or when location changes
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-
     if (!location || !mapContainerRef.current || !open) return;
 
     const map = new maplibregl.Map({
@@ -59,12 +53,14 @@ export default function LocationDetailDialog({
     new maplibregl.Marker().setLngLat(location.coords).addTo(map);
     mapInstanceRef.current = map;
 
-    setTimeout(() => {
+    const resizeTimeout = setTimeout(() => {
       map.resize();
     }, 300); // Delay ensures Dialog is visible
 
     return () => {
+      clearTimeout(resizeTimeout);
       map.remove();
+      mapInstanceRef.current = null;
     };
   }, [location, open]);
 
@@ -103,7 +99,7 @@ export default function LocationDetailDialog({
           </Typography>
         </Box>
 
-        {/* <Box
+        <Box
           ref={mapContainerRef}
           sx={{
             height: 240,
@@ -114,7 +110,7 @@ export default function LocationDetailDialog({
             border: "1px solid #ccc",
             backgroundColor: "#f5f5f5",
           }}
-        /> */}
+        />
 
         <Divider sx={{ my: 2 }} />
 
